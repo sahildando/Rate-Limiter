@@ -22,6 +22,11 @@ node_modules/
 .next/
 out/
 
+# AWS CDK
+infra/node_modules/
+infra/cdk.out/
+infra/dist/
+
 # IDE
 .idea/
 .vscode/

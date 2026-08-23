@@ -17,11 +17,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN chmod +x scripts/start-api.sh && chown -R appuser:appuser /app
+RUN chmod +x scripts/entrypoint.sh scripts/start-api.sh && chown -R appuser:appuser /app
 
 USER appuser
 
 EXPOSE 8000
+
+ENTRYPOINT ["./scripts/entrypoint.sh"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -f "http://127.0.0.1:${PORT}/health/live" || exit 1

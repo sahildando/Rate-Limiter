@@ -328,3 +328,19 @@ cd backend && ruff check app && mypy app && pytest -v
 cd frontend && npm run lint && npm run build
 ```
 
+## Production Deployment
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for full instructions (Neon, Upstash, Render, Vercel).
+
+| Component | Platform |
+|-----------|----------|
+| Frontend | Vercel (`frontend/`) |
+| API | Render web service |
+| Worker + scheduler | Render background workers |
+| PostgreSQL | Neon |
+| Redis | Upstash |
+
+```bash
+./scripts/smoke-test.sh https://<your-api>.onrender.com
+```
+

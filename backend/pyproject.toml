@@ -1,0 +1,87 @@
+[project]
+name = "api-monitoring-platform"
+version = "0.1.0"
+description = "Production-grade API monitoring platform"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "alembic>=1.14.0",
+    "redis>=5.2.0",
+    "httpx>=0.28.0",
+    "structlog>=24.4.0",
+    "PyJWT>=2.9.0",
+    "passlib[argon2]>=1.7.4",
+    "email-validator>=2.2.0",
+    "celery[redis]>=5.4.0",
+    "prometheus-client>=0.21.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "types-redis>=4.6.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["app/tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"migrations/**/*.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["app/tests/"]
+
+[[tool.mypy.overrides]]
+module = ["celery", "celery.*", "passlib", "passlib.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "app.monitoring.tasks",
+    "app.monitoring.celery_app",
+    "app.monitoring.lock",
+    "app.api.dependencies",
+    "app.api.middleware.rate_limit",
+]
+disable_error_code = ["no-untyped-call", "untyped-decorator", "no-untyped-def"]
+
+[[tool.mypy.overrides]]
+module = ["app.core.config", "app.api.v1.metrics"]
+disable_error_code = ["assignment", "misc"]
+
+[[tool.mypy.overrides]]
+module = [
+    "app.core.security",
+    "app.core.logging",
+    "app.core.rate_limiter",
+    "app.core.idempotency",
+    "app.monitoring.retry",
+    "app.services.analytics_service",
+]
+disable_error_code = ["no-any-return", "no-untyped-def"]
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"

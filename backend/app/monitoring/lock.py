@@ -5,6 +5,7 @@ import uuid
 import redis
 
 from app.core.config import get_settings
+from app.core.redis import sync_redis_client
 
 
 def _lock_key(monitor_id: str | uuid.UUID) -> str:
@@ -30,7 +31,7 @@ class MonitorLock:
         if self._acquired:
             return True
 
-        self._redis = redis.from_url(str(get_settings().redis_url), decode_responses=True)
+        self._redis = sync_redis_client()
         acquired = self._redis.set(
             _lock_key(self._monitor_id),
             "1",
@@ -52,7 +53,7 @@ def mark_monitor_pending(monitor_id: str | uuid.UUID, *, ttl_seconds: int | None
     """Mark a monitor as having a pending queued check. Returns False if already pending."""
     settings = get_settings()
     ttl = ttl_seconds or settings.monitor_pending_ttl_seconds
-    client = redis.from_url(str(settings.redis_url), decode_responses=True)
+    client = sync_redis_client(settings)
     try:
         return bool(
             client.set(_pending_key(monitor_id), "1", nx=True, ex=ttl)
@@ -64,7 +65,7 @@ def mark_monitor_pending(monitor_id: str | uuid.UUID, *, ttl_seconds: int | None
 def clear_monitor_pending(monitor_id: str | uuid.UUID) -> None:
     """Clear the pending marker after a check completes or is skipped."""
     settings = get_settings()
-    client = redis.from_url(str(settings.redis_url), decode_responses=True)
+    client = sync_redis_client(settings)
     try:
         client.delete(_pending_key(monitor_id))
     finally:

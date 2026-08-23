@@ -2,7 +2,6 @@
 
 from collections.abc import Awaitable, Callable
 
-import redis.asyncio as aioredis
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
@@ -10,6 +9,7 @@ from starlette.types import ASGIApp
 
 from app.core.config import get_settings
 from app.core.rate_limiter import RateLimiter
+from app.core.redis import async_redis_client
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -30,10 +30,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         client_ip = request.client.host if request.client else "unknown"
         authorization = request.headers.get("authorization")
 
-        redis_client = aioredis.from_url(
-            str(self._settings.redis_url),
-            decode_responses=True,
-        )
+        redis_client = async_redis_client(self._settings)
         try:
             allowed = await RateLimiter(redis_client).check_request(
                 client_ip=client_ip,

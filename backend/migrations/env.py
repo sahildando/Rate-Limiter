@@ -8,8 +8,6 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from sqlalchemy.ext.asyncio import create_async_engine
-
 from app.core.config import get_settings
 from app.db.base import Base
 from app.models import Check, Monitor, User  # noqa: F401 — register models with metadata

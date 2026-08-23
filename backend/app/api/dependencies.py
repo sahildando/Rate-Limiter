@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.core.exceptions import AuthenticationError
 from app.core.idempotency import IdempotencyStore
+from app.core.redis import async_redis_client
 from app.core.security import decode_access_token
 from app.db.session import get_db_session
 from app.models.user import User, UserRole
@@ -48,7 +49,7 @@ async def get_settings_dep() -> Settings:
 async def get_redis_client() -> AsyncGenerator[aioredis.Redis, None]:
     """Yield a Redis client for the current request."""
     settings = get_settings()
-    client = aioredis.from_url(str(settings.redis_url), decode_responses=True)
+    client = async_redis_client(settings)
     try:
         yield client
     finally:

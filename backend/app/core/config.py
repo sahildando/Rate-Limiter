@@ -93,6 +93,12 @@ class Settings(BaseSettings):
         if not self.cors_origins or "localhost" in self.cors_origins.lower():
             errors.append("CORS_ORIGINS must be set to the production frontend URL(s)")
 
+        broker = str(self.celery_broker_url or self.redis_url).lower()
+        backend = str(self.celery_result_backend or self.redis_url).lower()
+        for name, url in (("CELERY_BROKER_URL", broker), ("CELERY_RESULT_BACKEND", backend)):
+            if "localhost" in url or "127.0.0.1" in url:
+                errors.append(f"{name} must not point to localhost in production")
+
         if errors:
             raise ValueError("; ".join(errors))
         return self

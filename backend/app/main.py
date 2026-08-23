@@ -35,8 +35,8 @@ def create_app() -> FastAPI:
         description="Production-grade API uptime monitoring service",
         version="0.1.0",
         lifespan=lifespan,
-        docs_url="/docs" if settings.environment != "production" else None,
-        redoc_url="/redoc" if settings.environment != "production" else None,
+        docs_url="/docs" if settings.api_docs_enabled else None,
+        redoc_url="/redoc" if settings.api_docs_enabled else None,
     )
 
     app.add_middleware(

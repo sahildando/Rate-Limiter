@@ -1,6 +1,19 @@
-# API Monitoring Platform — Phase 1
+# API Monitoring Platform
 
 Production-grade API monitoring platform (UptimeRobot / Better Uptime style).
+
+## Live Demo
+
+> Deploy using [DEPLOYMENT.md](DEPLOYMENT.md). After deployment, update these URLs:
+
+| Service | URL |
+|---------|-----|
+| Frontend | `https://<your-app>.vercel.app` |
+| Backend | `https://<your-api>.onrender.com` |
+| API Docs | `https://<your-api>.onrender.com/docs` |
+| Health | `https://<your-api>.onrender.com/health/live` |
+
+**Quick deploy:** [Render Blueprint](https://dashboard.render.com/blueprint/new?repo=https://github.com/sahildando/Rate-Limiter) + [Vercel import](https://vercel.com/new) (root: `frontend`)
 
 ## Phase 1 Status
 

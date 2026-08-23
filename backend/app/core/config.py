@@ -1,10 +1,24 @@
 """Application configuration via environment variables."""
 
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import Field, PostgresDsn, RedisDsn, field_validator
+from pydantic import Field, PostgresDsn, RedisDsn, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.core.database import (
+    asyncpg_connect_args,
+    normalize_async_database_url,
+    strip_unsupported_query_params,
+)
+
+_INSECURE_JWT_SECRETS = frozenset(
+    {
+        "change-me-in-production",
+        "change-me-in-production-use-a-long-random-string",
+        "test-secret-key-for-jwt-signing",
+    }
+)
 
 
 class Settings(BaseSettings):
@@ -19,6 +33,7 @@ class Settings(BaseSettings):
 
     environment: Literal["development", "staging", "production", "test"] = "development"
     log_level: str = "INFO"
+    enable_api_docs: bool | None = Field(default=None)
 
     database_url: PostgresDsn = Field(
         default="postgresql+asyncpg://monitoring:monitoring@localhost:5432/monitoring"
@@ -47,6 +62,7 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 30
 
     cors_origins: str = "http://localhost:3000"
+    frontend_url: str | None = Field(default=None)
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -55,6 +71,32 @@ class Settings(BaseSettings):
             return ",".join(value)
         return value
 
+    @model_validator(mode="after")
+    def validate_production_settings(self) -> Self:
+        if self.environment != "production":
+            return self
+
+        errors: list[str] = []
+        if self.jwt_secret in _INSECURE_JWT_SECRETS or len(self.jwt_secret) < 32:
+            errors.append(
+                "JWT_SECRET must be a secure value with at least 32 characters in production"
+            )
+
+        database = str(self.database_url).lower()
+        if "localhost" in database or "127.0.0.1" in database:
+            errors.append("DATABASE_URL must not point to localhost in production")
+
+        redis = str(self.redis_url).lower()
+        if "localhost" in redis or "127.0.0.1" in redis:
+            errors.append("REDIS_URL must not point to localhost in production")
+
+        if not self.cors_origins or "localhost" in self.cors_origins.lower():
+            errors.append("CORS_ORIGINS must be set to the production frontend URL(s)")
+
+        if errors:
+            raise ValueError("; ".join(errors))
+        return self
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
@@ -62,6 +104,20 @@ class Settings(BaseSettings):
     @property
     def is_test(self) -> bool:
         return self.environment == "test"
+
+    @property
+    def api_docs_enabled(self) -> bool:
+        if self.enable_api_docs is not None:
+            return self.enable_api_docs
+        return self.environment != "production"
+
+    @property
+    def async_database_url(self) -> str:
+        return strip_unsupported_query_params(normalize_async_database_url(str(self.database_url)))
+
+    @property
+    def database_connect_args(self) -> dict[str, object]:
+        return asyncpg_connect_args(str(self.database_url))
 
     @property
     def resolved_celery_broker_url(self) -> str:
